@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/ing-bank/flink-deployer/cmd/cli/flink"
-	"github.com/ing-bank/flink-deployer/cmd/cli/operations"
+	"github.com/joshuavijay/flink-job-deployer/cmd/cli/flink"
+	"github.com/joshuavijay/flink-job-deployer/cmd/cli/operations"
 	"github.com/spf13/afero"
 )
 

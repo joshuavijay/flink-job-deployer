@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ing-bank/flink-deployer/cmd/cli/flink"
+	"github.com/joshuavijay/flink-job-deployer/cmd/cli/flink"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -196,7 +196,7 @@ func TestUpdateJobShouldReturnAnErrorWhenTheSavepointCannotBeCreated(t *testing.
 		SavepointDir:  "/data/flink",
 	})
 
-	assert.EqualError(t, err, "failed to create savepoint for job Job-A due to error: failed")
+	assert.EqualError(t, err, "Failed to create savepoint for job \"WordCountStateful v1.0(Job-A)\" due to error: failed")
 }
 
 func TestUpdateJobShouldReturnAnErrorWhenTheJobCannotBeCanceled(t *testing.T) {
@@ -232,7 +232,7 @@ func TestUpdateJobShouldReturnAnErrorWhenTheJobCannotBeCanceled(t *testing.T) {
 		SavepointDir:  "/data/flink",
 	})
 
-	assert.EqualError(t, err, "job \"Job-A\" failed to cancel due to: failed")
+	assert.EqualError(t, err, "Job \"WordCountStateful v1.0(Job-A)\" failed to cancel due to: failed")
 }
 
 func TestUpdateJobShouldReturnAnErrorWhenTheLatestSavepointCannotBeRetrieved(t *testing.T) {
@@ -277,7 +277,7 @@ func TestUpdateJobShouldReturnAnErrorWhenTheLatestSavepointCannotBeRetrieved(t *
 		SavepointDir:  "/data/flink",
 	})
 
-	assert.EqualError(t, err, "retrieving the latest savepoint failed: No savepoints present in directory: /data/flink")
+	assert.EqualError(t, err, "Retrieving the latest savepoint failed: No savepoints present in directory: /data/flink")
 }
 
 func TestUpdateJobShouldReturnNilWhenTheUpdateSucceeds(t *testing.T) {
@@ -326,7 +326,7 @@ func TestUpdateJobShouldReturnNilWhenTheUpdateSucceeds(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestUpdateJobShouldReturnAnErrorWhenNoRunningJobsAreFound(t *testing.T) {
+func TestUpdateJobShouldContinueDeploymentWhenNoRunningJobsAreFound(t *testing.T) {
 	mockedRetrieveJobsError = nil
 	mockedRetrieveJobsResponse = []flink.Job{}
 
@@ -343,7 +343,7 @@ func TestUpdateJobShouldReturnAnErrorWhenNoRunningJobsAreFound(t *testing.T) {
 		SavepointDir:  "/data/flink",
 	})
 
-	assert.EqualError(t, err, "no instance running for job name base \"WordCountStateful\". Aborting update")
+	assert.Nil(t, err)
 }
 
 func TestUpdateJobShouldReturnAnErrorWhenMultipleRunningJobsAreFound(t *testing.T) {
