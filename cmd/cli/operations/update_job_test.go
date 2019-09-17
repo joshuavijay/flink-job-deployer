@@ -196,13 +196,13 @@ func TestUpdateJobShouldReturnAnErrorWhenTheSavepointCannotBeCreated(t *testing.
 		SavepointDir:  "/data/flink",
 	})
 
-	assert.EqualError(t, err, "Failed to create savepoint for job \"WordCountStateful v1.0(Job-A)\" due to error: failed")
+	assert.EqualError(t, err, "failed to create savepoint for job Job-A due to error: failed")
 }
 
 func TestUpdateJobShouldReturnAnErrorWhenTheJobCannotBeCanceled(t *testing.T) {
 	mockedRetrieveJobsError = nil
 	mockedRetrieveJobsResponse = []flink.Job{
-		flink.Job{
+		{
 			ID:     "Job-A",
 			Name:   "WordCountStateful v1.0",
 			Status: "RUNNING",
@@ -217,7 +217,7 @@ func TestUpdateJobShouldReturnAnErrorWhenTheJobCannotBeCanceled(t *testing.T) {
 			Id: "COMPLETED",
 		},
 	}
-	mockedCancelError = errors.New("failed")
+	mockedTerminateError = errors.New("failed")
 
 	operator := RealOperator{
 		FlinkRestAPI: TestFlinkRestClient{
@@ -232,7 +232,7 @@ func TestUpdateJobShouldReturnAnErrorWhenTheJobCannotBeCanceled(t *testing.T) {
 		SavepointDir:  "/data/flink",
 	})
 
-	assert.EqualError(t, err, "Job \"WordCountStateful v1.0(Job-A)\" failed to cancel due to: failed")
+	assert.EqualError(t, err, "job \"Job-A\" failed to cancel due to: failed")
 }
 
 func TestUpdateJobShouldReturnAnErrorWhenTheLatestSavepointCannotBeRetrieved(t *testing.T) {
@@ -256,7 +256,7 @@ func TestUpdateJobShouldReturnAnErrorWhenTheLatestSavepointCannotBeRetrieved(t *
 			Id: "COMPLETED",
 		},
 	}
-	mockedCancelError = nil
+	mockedTerminateError = nil
 	mockedUploadJarResponse = flink.UploadJarResponse{
 		Filename: "/data/flink/sample.jar",
 		Status:   "success",
@@ -277,7 +277,7 @@ func TestUpdateJobShouldReturnAnErrorWhenTheLatestSavepointCannotBeRetrieved(t *
 		SavepointDir:  "/data/flink",
 	})
 
-	assert.EqualError(t, err, "Retrieving the latest savepoint failed: No savepoints present in directory: /data/flink")
+	assert.EqualError(t, err, "retrieving the latest savepoint failed: No savepoints present in directory: /data/flink")
 }
 
 func TestUpdateJobShouldReturnNilWhenTheUpdateSucceeds(t *testing.T) {
@@ -302,7 +302,7 @@ func TestUpdateJobShouldReturnNilWhenTheUpdateSucceeds(t *testing.T) {
 			Id: "COMPLETED",
 		},
 	}
-	mockedCancelError = nil
+	mockedTerminateError = nil
 	mockedUploadJarResponse = flink.UploadJarResponse{
 		Filename: "/data/flink/sample.jar",
 		Status:   "success",
@@ -326,7 +326,7 @@ func TestUpdateJobShouldReturnNilWhenTheUpdateSucceeds(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestUpdateJobShouldContinueDeploymentWhenNoRunningJobsAreFound(t *testing.T) {
+func TestUpdateJobShouldReturnAnErrorWhenNoRunningJobsAreFound(t *testing.T) {
 	mockedRetrieveJobsError = nil
 	mockedRetrieveJobsResponse = []flink.Job{}
 
@@ -343,7 +343,7 @@ func TestUpdateJobShouldContinueDeploymentWhenNoRunningJobsAreFound(t *testing.T
 		SavepointDir:  "/data/flink",
 	})
 
-	assert.Nil(t, err)
+	assert.EqualError(t, err, "no instance running for job name base \"WordCountStateful\". Aborting update")
 }
 
 func TestUpdateJobShouldReturnAnErrorWhenMultipleRunningJobsAreFound(t *testing.T) {
@@ -371,10 +371,10 @@ func TestUpdateJobShouldReturnAnErrorWhenMultipleRunningJobsAreFound(t *testing.
 	// flink-deployer wont want to update (stop/start) an undesired job
 	// when there are two running jobs with same name. So it must abort the update
 	err := operator.Update(UpdateJob{
-		JobNameBase:   "WordCountStateful v1.0",
+		JobNameBase:   "WordCountStateful",
 		LocalFilename: "testdata/sample.jar",
 		SavepointDir:  "/data/flink",
 	})
 
-	assert.EqualError(t, err, "job name with base \"WordCountStateful v1.0\" has 2 instances running. Aborting update")
+	assert.EqualError(t, err, "job name with base \"WordCountStateful\" has 2 instances running. Aborting update")
 }

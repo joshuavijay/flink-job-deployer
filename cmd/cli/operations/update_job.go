@@ -20,7 +20,7 @@ type UpdateJob struct {
 	APIToken              string
 	EntryClass            string
 	Parallelism           int
-	ProgramArgs           string
+	ProgramArgs           []string
 	SavepointDir          string
 	AllowNonRestoredState bool
 }
@@ -36,7 +36,7 @@ func (o RealOperator) filterRunningJobsByName(jobs []flink.Job, jobNameBase stri
 
 func (o RealOperator) monitorSavepointCreation(jobID string, requestID string, maxElapsedTime int) error {
 	op := func() error {
-		log.Println("Checking status of savepoint creation")
+		log.Println("checking status of savepoint creation")
 		res, err := o.FlinkRestAPI.MonitorSavepointCreation(jobID, requestID)
 		if err != nil {
 			log.Println(err)
@@ -48,11 +48,11 @@ func (o RealOperator) monitorSavepointCreation(jobID string, requestID string, m
 			log.Println("Savepoint creation successful")
 			return nil
 		case "IN_PROGRESS":
-			err = fmt.Errorf("Savepoint creation for job \"%v\" is still pending", jobID)
+			err = fmt.Errorf("savepoint creation for job \"%v\" is still pending", jobID)
 			log.Println(err)
 			return err
 		default:
-			err = fmt.Errorf("Savepoint creation for job \"%v\" returned an unknown status \"%v\"", jobID, res.Status)
+			err = fmt.Errorf("savepoint creation for job \"%v\" returned an unknown status \"%v\"", jobID, res.Status)
 			log.Println(err)
 			return err
 		}
@@ -106,8 +106,10 @@ func (o RealOperator) Update(u UpdateJob) error {
 	case 0:
 		log.Printf("No instance running for job name base \"%v\"", u.JobNameBase)
 	case 1:
+		log.Printf("Found exactly 1 running job with base name: \"%v\"", u.JobNameBase)
 		job := runningJobs[0]
-		log.Printf("Found exactly 1 running job. Creating savepoint: \"%v(%v)\"", job.Name, job.ID)
+
+		log.Printf("Creating savepoint for job \"%v\"", job.ID)
 		savepointResponse, err := o.FlinkRestAPI.CreateSavepoint(job.ID, u.SavepointDir)
 		if err != nil {
 			return fmt.Errorf("Failed to create savepoint for job \"%v(%v)\" due to error: %v", job.Name, job.ID, err)
@@ -119,9 +121,10 @@ func (o RealOperator) Update(u UpdateJob) error {
 		}
 
 		log.Printf("Cancelling job: \"%v(%v)\"", job.Name, job.ID)
-		err = o.FlinkRestAPI.Cancel(job.ID)
+		err = o.FlinkRestAPI.Terminate(job.ID, "cancel")
 		if err != nil {
 			return fmt.Errorf("Job \"%v(%v)\" failed to cancel due to: %v", job.Name, job.ID, err)
+
 		}
 
 		latestSavepoint, err := o.retrieveLatestSavepoint(u.SavepointDir)
