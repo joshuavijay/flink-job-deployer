@@ -23,6 +23,7 @@ type UpdateJob struct {
 	ProgramArgs           []string
 	SavepointDir          string
 	AllowNonRestoredState bool
+	FallbackToDeploy      bool
 }
 
 func (o RealOperator) filterRunningJobsByName(jobs []flink.Job, jobNameBase string) (ret []flink.Job) {
@@ -104,12 +105,15 @@ func (o RealOperator) Update(u UpdateJob) error {
 	}
 	switch len(runningJobs) {
 	case 0:
-		log.Printf("No instance running for job name base \"%v\"", u.JobNameBase)
+		if u.FallbackToDeploy == false {
+			return fmt.Errorf("no instance running for job name base \"%v\". Aborting update", u.JobNameBase)
+		}
+		log.Printf("no instance running for job name base \"%v\". Falling back to deploy", u.JobNameBase)
 	case 1:
-		log.Printf("Found exactly 1 running job with base name: \"%v\"", u.JobNameBase)
+		log.Printf("found exactly 1 running job with base name: \"%v\"", u.JobNameBase)
 		job := runningJobs[0]
 
-		log.Printf("Creating savepoint for job \"%v\"", job.ID)
+		log.Printf("creating savepoint for job \"%v\"", job.ID)
 		savepointResponse, err := o.FlinkRestAPI.CreateSavepoint(job.ID, u.SavepointDir)
 		if err != nil {
 			return fmt.Errorf("Failed to create savepoint for job \"%v(%v)\" due to error: %v", job.Name, job.ID, err)
@@ -129,7 +133,7 @@ func (o RealOperator) Update(u UpdateJob) error {
 
 		latestSavepoint, err := o.retrieveLatestSavepoint(u.SavepointDir)
 		if err != nil {
-			return fmt.Errorf("Retrieving the latest savepoint failed: %v", err)
+			return fmt.Errorf("retrieving the latest savepoint failed: %v", err)
 		}
 
 		if len(latestSavepoint) != 0 {
