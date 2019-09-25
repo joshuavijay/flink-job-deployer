@@ -22,7 +22,7 @@ type CreateSavepointResponse struct {
 func (c FlinkRestClient) CreateSavepoint(jobID string, savepointPath string) (CreateSavepointResponse, error) {
 	createSavepointRequest := createSavepointRequest{
 		TargetDirectory: savepointPath,
-		CancelJob:       false,
+		CancelJob:       true,
 	}
 
 	reqBody := new(bytes.Buffer)
@@ -68,7 +68,20 @@ type SavepointCreationStatus struct {
 // MonitorSavepointCreationResponse represents the response body
 // used by the savepoint monitoring API
 type MonitorSavepointCreationResponse struct {
-	Status SavepointCreationStatus `json:"status"`
+	Status    SavepointCreationStatus    `json:"status"`
+	Operation SavepointCreationOperation `json:"operation"`
+}
+
+// SavepointCreationOperation stores location of the savepoint
+// and SavepointFailureCause
+type SavepointCreationOperation struct {
+	Location     string                `json:"location"`
+	FailureCause SavepointFailureCause `json:"failure-cause"`
+}
+
+// SavepointFailureCause stores the savepoint failure cause
+type SavepointFailureCause struct {
+	Class string `json:"class"`
 }
 
 // MonitorSavepointCreation allows for monitoring the status of a savepoint creation
