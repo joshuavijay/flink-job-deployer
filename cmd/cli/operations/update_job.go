@@ -133,11 +133,15 @@ func (o RealOperator) Update(u UpdateJob) error {
 			return fmt.Errorf("Failed to monitor savepoint creation for job \"%v(%v)\" due to error: %v", job.Name, job.ID, err)
 		}
 
-		if savepointStateResponse.Operation.FailureCause.Class != "" {
-			return fmt.Errorf("Savepoint creation for job \"%v\" returned a COMPLETED status but has failures: \"%v\"", job.ID, savepointStateResponse.Operation.FailureCause.Class)
+		if savepointStateResponse.Operation.FailureCause.Class != "" || savepointStateResponse.Operation.FailureCause.Stacktrace != "" {
+			return fmt.Errorf("Savepoint creation for job \"%v\" has COMPLETED with failures: \"%v\"", job.ID, savepointStateResponse)
 		}
 
-		log.Printf("Savepoint creation successful: %v", savepointStateResponse.Operation.Location)
+		if len(savepointStateResponse.Operation.Location) <= 0 {
+			return fmt.Errorf("Savepoint creation for job \"%v\" has COMPLETED but has no savepoint location in the response: \"%v\"", job.ID, savepointStateResponse)
+		}
+
+		log.Printf("Savepoint is successfully created here : %v", savepointStateResponse.Operation.Location)
 		deploy.SavepointPath = savepointStateResponse.Operation.Location
 
 		runningJobs, err := o.getRunningJobsByName(u.JobNameBase)

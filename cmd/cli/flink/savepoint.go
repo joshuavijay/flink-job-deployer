@@ -81,7 +81,8 @@ type SavepointCreationOperation struct {
 
 // SavepointFailureCause stores the savepoint failure cause
 type SavepointFailureCause struct {
-	Class string `json:"class"`
+	Class      string `json:"class"`
+	Stacktrace string `json:"stack-trace"`
 }
 
 // MonitorSavepointCreation allows for monitoring the status of a savepoint creation
